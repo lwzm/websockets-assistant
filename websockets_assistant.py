@@ -42,5 +42,8 @@ if __name__ == '__main__':
     async def hello(ws):
         await ws.send("hello")
         await ws.send("websocket")
-    run("wss://echo.websocket.org/", print, hello)
+        await ws.close()
+        await asyncio.sleep(0.1)
+        asyncio.get_event_loop().stop()
+    run("wss://echo.websocket.org/", print, hello, True)
     start()
