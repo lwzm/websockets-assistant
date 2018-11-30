@@ -18,7 +18,7 @@ async def _loop(uri, consume=lambda x: x, assist=None, once=False):
         ts = datetime.now()
         try:
             async with websockets.connect(uri) as ws:
-                log(ws, name, "begin")
+                log(ws, name)
                 if assist:
                     asyncio.get_event_loop().create_task(assist(ws))
                 async for o in ws:
