@@ -2,30 +2,32 @@
 
 import asyncio
 import sys
-import traceback
+from datetime import datetime
 
-import pendulum
 import websockets
 
 
 def log(*args):
-    print(pendulum.now(), *args, file=sys.stderr, flush=True)
+    print(datetime.now(), *args, file=sys.stderr, flush=True)
 
 
 async def _loop(uri, consume=lambda x: x, assist=None, once=False):
     ws = None
+    name = uri[:55]
     while True:
+        ts = datetime.now()
         try:
             async with websockets.connect(uri) as ws:
-                log(ws, "begin", uri[:50])
+                log(ws, name, "begin")
                 if assist:
                     asyncio.get_event_loop().create_task(assist(ws))
                 async for o in ws:
                     consume(o)
-                log(ws, "end", uri[:50])
-        except Exception:
-            log(ws, uri[:50])
-            traceback.print_exc()
+        except Exception as e:
+            log(type(e), e)
+        finally:
+            log(ws, name, datetime.now() - ts)
+
         if once:
             break
 

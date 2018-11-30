@@ -11,7 +11,7 @@ with open("README.md") as f:
 
 setup(
     name=name,
-    version="1.1",
+    version="1.2",
     description="Util for create websocket client(s) quickly",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,7 +20,7 @@ setup(
     keywords="websockets websocket util ws wss".split(),
     url="https://github.com/{}/{}".format(author, name),
     py_modules=["websockets_assistant"],
-    install_requires="websockets pendulum".split(),
+    install_requires="websockets".split(),
     classifiers=[
         "Environment :: Console",
         "Programming Language :: Python :: 3",
