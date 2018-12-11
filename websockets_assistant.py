@@ -52,10 +52,12 @@ async def _loop(uri, consume=lambda x: x, assist=None, once=False, timeout=5):
             ws = await asyncio.wait_for(websockets.connect(uri), timeout)
             log(f"{id(ws):x}", name, color="green")
             if assist:
-                asyncio.get_event_loop().create_task(assist(ws))
+                asyncio.create_task(assist(ws))
             async for o in ws:
                 consume(o)
             await ws.close()
+        except asyncio.CancelledError:
+            break
         except Exception as e:
             log(type(e), e, color="red")
         finally:
@@ -63,13 +65,15 @@ async def _loop(uri, consume=lambda x: x, assist=None, once=False, timeout=5):
 
         if once:
             break
+        await asyncio.sleep(0.1)
 
 
 def run(*args, **kwargs):
-    return asyncio.get_event_loop().create_task(_loop(*args, **kwargs))
+    return asyncio.create_task(_loop(*args, **kwargs))
 
 
 def start():
+    "deprecated"
     asyncio.get_event_loop().run_forever()
 
 
@@ -77,8 +81,11 @@ if __name__ == '__main__':
     async def hello(ws):
         await ws.send("hello")
         await ws.send("websocket")
-        await ws.close()
         await asyncio.sleep(0.1)
-        asyncio.get_event_loop().stop()
-    run("wss://echo.websocket.org/", print, hello, True)
-    start()
+        await ws.close()
+    async def main():
+        run("wss://echo.websocket.org/", print, hello, True)
+        for i in range(5, 0, -1):
+            print(i)
+            await asyncio.sleep(1)
+    asyncio.run(main())
