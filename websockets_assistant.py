@@ -43,18 +43,18 @@ def log(*args, color=None):
     print(f"{color}{ts}", *args, colors["reset"], file=sys.stderr, flush=True)
 
 
-async def _loop(uri, consume=lambda x: x, assist=None, once=False):
+async def _loop(uri, consume=lambda x: x, assist=None, once=False, timeout=5):
     ws = None
     name = uri[:55]
     while True:
         ts = datetime.now()
         try:
-            async with websockets.connect(uri) as ws:
-                log(f"{id(ws):x}", name, color="green")
-                if assist:
-                    asyncio.get_event_loop().create_task(assist(ws))
-                async for o in ws:
-                    consume(o)
+            ws = await asyncio.wait_for(websockets.connect(uri), timeout)
+            log(f"{id(ws):x}", name, color="green")
+            if assist:
+                asyncio.get_event_loop().create_task(assist(ws))
+            async for o in ws:
+                consume(o)
         except Exception as e:
             log(type(e), e, color="red")
         finally:
