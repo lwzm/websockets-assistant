@@ -55,6 +55,7 @@ async def _loop(uri, consume=lambda x: x, assist=None, once=False, timeout=5):
                 asyncio.get_event_loop().create_task(assist(ws))
             async for o in ws:
                 consume(o)
+            await ws.close()
         except Exception as e:
             log(type(e), e, color="red")
         finally:
