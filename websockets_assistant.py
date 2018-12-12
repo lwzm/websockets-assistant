@@ -36,11 +36,18 @@ colors = {
     'yellow': '\x1b[33m',
 }
 
+sleep = asyncio.sleep
+
+_tty = sys.stderr.isatty()
+
 
 def log(*args, color=None):
-    color = colors.get(color, "")
     ts = datetime.now()
-    print(f"{color}{ts}", *args, colors["reset"], file=sys.stderr, flush=True)
+    if _tty and color:
+        color, reset = colors[color], colors["reset"]
+        print(f"{color}{ts}", *args, reset, file=sys.stderr, flush=True)
+    else:
+        print(f"{ts}", *args, file=sys.stderr, flush=True)
 
 
 async def _loop(uri, consume, companion=None, once=False, timeout=5):
@@ -65,7 +72,7 @@ async def _loop(uri, consume, companion=None, once=False, timeout=5):
 
         if once:
             break
-        await asyncio.sleep(0.1)
+        await sleep(0.1)
 
 
 def client(*args, **kwargs):
@@ -79,9 +86,9 @@ def start(go=None):
 if __name__ == '__main__':
     async def hello(ws):
         await ws.send("hello")
-        await asyncio.sleep(1)
+        await sleep(1)
         await ws.send("websocket")
-        await asyncio.sleep(0.1)
+        await sleep(0.1)
         await ws.close()
     async def main():
         #await client("wss://echo.websocket.org/", log, hello, True)
@@ -89,5 +96,5 @@ if __name__ == '__main__':
         client("wss://echo.websocket.org/", log, hello, True)
         for i in range(5, 0, -1):
             print(i)
-            await asyncio.sleep(1)
+            await sleep(1)
     start(main())
