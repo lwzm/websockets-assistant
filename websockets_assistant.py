@@ -43,16 +43,16 @@ def log(*args, color=None):
     print(f"{color}{ts}", *args, colors["reset"], file=sys.stderr, flush=True)
 
 
-async def _loop(uri, consume=lambda x: x, assist=None, once=False, timeout=5):
+async def _loop(uri, consume, companion=None, once=False, timeout=5):
     ws = None
     name = uri[:55]
     while True:
         ts = datetime.now()
         try:
             ws = await asyncio.wait_for(websockets.connect(uri), timeout)
+            if companion:
+                asyncio.create_task(companion(ws))
             log(f"{id(ws):x}", name, color="green")
-            if assist:
-                asyncio.create_task(assist(ws))
             async for o in ws:
                 consume(o)
             await ws.close()
@@ -68,13 +68,12 @@ async def _loop(uri, consume=lambda x: x, assist=None, once=False, timeout=5):
         await asyncio.sleep(0.1)
 
 
-def run(*args, **kwargs):
+def client(*args, **kwargs):
     return asyncio.create_task(_loop(*args, **kwargs))
 
 
-def start():
-    "deprecated"
-    asyncio.get_event_loop().run_forever()
+def start(go=None):
+    go and asyncio.run(go)
 
 
 if __name__ == '__main__':
@@ -84,8 +83,9 @@ if __name__ == '__main__':
         await asyncio.sleep(0.1)
         await ws.close()
     async def main():
-        run("wss://echo.websocket.org/", print, hello, True)
-        for i in range(5, 0, -1):
+        await client("wss://echo.websocket.org/", log, hello, True)
+        client("wss://echo.websocket.org/", log, hello, True)
+        for i in range(2, 0, -1):
             print(i)
             await asyncio.sleep(1)
-    asyncio.run(main())
+    start(main())
