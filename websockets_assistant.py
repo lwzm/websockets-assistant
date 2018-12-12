@@ -44,14 +44,13 @@ def log(*args, color=None):
 
 
 async def _loop(uri, consume, companion=None, once=False, timeout=5):
-    ws = None
+    ws = companion_task = None
     name = uri[:55]
     while True:
         ts = datetime.now()
         try:
             ws = await asyncio.wait_for(websockets.connect(uri), timeout)
-            if companion:
-                asyncio.create_task(companion(ws))
+            companion_task = companion and asyncio.create_task(companion(ws))
             log(f"{id(ws):x}", name, color="green")
             async for o in ws:
                 consume(o)
@@ -61,6 +60,7 @@ async def _loop(uri, consume, companion=None, once=False, timeout=5):
         except Exception as e:
             log(type(e), e, color="red")
         finally:
+            companion_task and companion_task.cancel()
             log(f"{id(ws):x}", name, datetime.now() - ts, color="yellow")
 
         if once:
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     async def main():
         await client("wss://echo.websocket.org/", log, hello, True)
         client("wss://echo.websocket.org/", log, hello, True)
-        for i in range(2, 0, -1):
+        for i in range(5, 0, -1):
             print(i)
             await asyncio.sleep(1)
     start(main())
