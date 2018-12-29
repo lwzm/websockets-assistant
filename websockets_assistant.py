@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import asyncio
+import signal
 import sys
+import traceback
 from datetime import datetime
 
 import websockets
@@ -40,6 +42,8 @@ sleep = asyncio.sleep
 
 _tty = sys.stderr.isatty()
 
+TASKS = []
+
 
 def log(*args, color=None):
     ts = datetime.now()
@@ -76,11 +80,49 @@ async def _loop(uri, consume, companion=None, once=False, timeout=5):
 
 
 def client(*args, **kwargs):
-    return asyncio.create_task(_loop(*args, **kwargs))
+    co = _loop(*args, **kwargs)
+    try:
+        return asyncio.create_task(co)
+    except RuntimeError:
+        TASKS.append(co)
 
 
 def start(go=None):
     go and asyncio.run(go)
+
+
+async def stdin():
+    loop = asyncio.get_running_loop()
+
+    # register SIGTSTP
+    def print_all_tasks():
+        for i in asyncio.all_tasks():
+            print(i._coro)
+
+    loop.add_signal_handler(signal.SIGTSTP, print_all_tasks)  # Ctrl-Z
+
+    # re-run coroutines those failed to start
+    for co in TASKS:
+        asyncio.create_task(co)
+    TASKS.clear()
+
+    # read standard input forever
+    q = asyncio.Queue()
+
+    loop.add_reader(
+        sys.stdin, lambda: q.put_nowait(input()))
+
+    while True:
+        s = await q.get()
+        try:
+            print(repr(eval(s.rstrip())))
+        except Exception:
+            traceback.print_exc()
+        sys.stdout.flush()
+
+
+def run():
+    asyncio.run(stdin())
 
 
 if __name__ == '__main__':
@@ -90,11 +132,18 @@ if __name__ == '__main__':
         await ws.send("websocket")
         await sleep(0.1)
         await ws.close()
+
     async def main():
-        #await client("wss://echo.websocket.org/", log, hello, True)
-        client("wss://echo.websocket.org/", log, hello, True)
-        client("wss://echo.websocket.org/", log, hello, True)
-        for i in range(5, 0, -1):
-            print(i)
-            await sleep(1)
+        await asyncio.gather(
+            client("wss://echo.websocket.org/", log, hello, True),
+            client("wss://echo.websocket.org/", log, hello, True),
+            client("wss://echo.websocket.org/", log, hello, True),
+        )
+
+    # test 1
     start(main())
+
+    # test 2
+    client("wss://echo.websocket.org/", log, hello, True),
+    client("wss://echo.websocket.org/", log, hello, True),
+    run()
