@@ -87,11 +87,7 @@ def client(*args, **kwargs):
         TASKS.append(co)
 
 
-def start(go=None):
-    go and asyncio.run(go)
-
-
-async def stdin():
+async def _stdin():
     loop = asyncio.get_running_loop()
 
     # register SIGTSTP
@@ -121,8 +117,8 @@ async def stdin():
         sys.stdout.flush()
 
 
-def run():
-    asyncio.run(stdin())
+def run(coroutine=None):
+    asyncio.run(coroutine or _stdin())
 
 
 if __name__ == '__main__':
@@ -141,7 +137,7 @@ if __name__ == '__main__':
         )
 
     # test 1
-    start(main())
+    run(main())
 
     # test 2
     client("wss://echo.websocket.org/", log, hello, True),
