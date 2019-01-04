@@ -42,8 +42,6 @@ sleep = asyncio.sleep
 
 _tty = sys.stderr.isatty()
 
-TASKS = []
-
 
 def log(*args, color=None):
     ts = datetime.now()
@@ -80,14 +78,19 @@ async def _loop(uri, consume, companion=None, once=False, timeout=5):
 
 
 def client(*args, **kwargs):
-    co = _loop(*args, **kwargs)
-    try:
-        return asyncio.create_task(co)
-    except RuntimeError:
-        TASKS.append(co)
+    cr = _loop(*args, **kwargs)
+    return asyncio.create_task(cr)
 
 
-async def _stdin():
+async def _stdin(init=None):
+    """loop forever util
+    init is a normal function or a coroutine
+    """
+    if init:
+        o = init()
+        if hasattr(o, "cr_code"):
+            return await asyncio.create_task(o)
+
     loop = asyncio.get_running_loop()
 
     # register SIGTSTP
@@ -96,11 +99,6 @@ async def _stdin():
             print(i._coro)
 
     loop.add_signal_handler(signal.SIGTSTP, print_all_tasks)  # Ctrl-Z
-
-    # re-run coroutines those failed to start
-    for co in TASKS:
-        asyncio.create_task(co)
-    TASKS.clear()
 
     # read standard input forever
     q = asyncio.Queue()
@@ -117,8 +115,8 @@ async def _stdin():
         sys.stdout.flush()
 
 
-def run(coroutine=None):
-    asyncio.run(coroutine or _stdin())
+def run(init):
+    asyncio.run(_stdin(init))
 
 
 if __name__ == '__main__':
@@ -135,11 +133,11 @@ if __name__ == '__main__':
             client("wss://echo.websocket.org/", log, hello, True),
             client("wss://echo.websocket.org/", log, hello, True),
         )
-
     # test 1
-    run(main())
+    run(main)
 
     # test 2
-    client("wss://echo.websocket.org/", log, hello, True),
-    client("wss://echo.websocket.org/", log, hello, True),
-    run()
+    def main():
+        client("wss://echo.websocket.org/", log, hello, True),
+        client("wss://echo.websocket.org/", log, hello, True),
+    run(main)

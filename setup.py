@@ -11,7 +11,7 @@ with open("README.md") as f:
 
 setup(
     name=name,
-    version="2.6",
+    version="2.7",
     description="Util for create websocket client(s) quickly",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -27,7 +27,6 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: Python :: Implementation :: PyPy",
-        "Topic :: Software Development :: Build Tools",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "License :: OSI Approved :: MIT License",
     ],
