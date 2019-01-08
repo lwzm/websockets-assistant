@@ -127,13 +127,13 @@ if __name__ == '__main__':
         await sleep(0.1)
         await ws.close()
 
+    # test 1
     async def main():
         await asyncio.gather(
             client("wss://echo.websocket.org/", log, hello, True),
             client("wss://echo.websocket.org/", log, hello, True),
             client("wss://echo.websocket.org/", log, hello, True),
         )
-    # test 1
     run(main)
 
     # test 2
