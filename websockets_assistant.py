@@ -52,13 +52,14 @@ def log(*args, color=None):
         print(f"{ts}", *args, file=sys.stderr, flush=True)
 
 
-async def _loop(uri, consume, companion=None, once=False, timeout=5):
+async def _loop(uri, consume, companion=None, once=False, timeout=5, **kwargs):
     ws = companion_task = None
     name = uri[:55]
     while True:
         ts = datetime.now()
         try:
-            ws = await asyncio.wait_for(websockets.connect(uri), timeout)
+            ws = await asyncio.wait_for(
+                websockets.connect(uri, **kwargs), timeout)
             companion_task = companion and asyncio.create_task(companion(ws))
             log(f"{id(ws):x}", name, color="green")
             async for o in ws:

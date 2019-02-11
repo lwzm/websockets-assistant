@@ -11,7 +11,7 @@ with open("README.md") as f:
 
 setup(
     name=name,
-    version="2.7",
+    version="2.8",
     description="Util for create websocket client(s) quickly",
     long_description=long_description,
     long_description_content_type="text/markdown",
